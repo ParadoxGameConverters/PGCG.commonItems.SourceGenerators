@@ -30,7 +30,7 @@ jobs:
       uses: jacobtomlinson/gha-find-replace@v3
       if: ${{ steps.get_new_version.outputs.new_tag }}
       with:
-        include: commonItems/commonItems.csproj
+        include: PGCG.commonItems.SourceGenerators/PGCG.commonItems.SourceGenerators.csproj
         find: <Version>${{ steps.get_new_version.outputs.old_tag }}</Version>
         replace: <Version>${{ steps.get_new_version.outputs.new_tag }}</Version>
         regex: false
