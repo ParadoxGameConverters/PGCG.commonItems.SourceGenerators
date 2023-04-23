@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [[self-hosted, linux], macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: "Setup Dotnet for use with actions"
+      uses: actions/setup-dotnet@main
+      with:
+        global-json-file: 'global.json'
+
+    - name: "Build project"
+      run: |
+       dotnet tool restore
+       dotnet build /m /p:Configuration=Debug
