@@ -7,6 +7,7 @@ using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 
+#nullable enable
 namespace commonItems.SourceGenerators {
 	[Generator]
 	public class SerializationSourceGenerator : ISourceGenerator {
@@ -44,8 +45,8 @@ namespace commonItems.SourceGenerators {
 
 			// Get the containing syntax node for the type declaration
 			// (could be a nested type, for example)
-			SyntaxNode potentialNamespaceParent = syntax.Parent;
-    
+			SyntaxNode? potentialNamespaceParent = syntax.Parent;
+
 			// Keep moving "out" of nested classes etc until we get to a namespace
 			// or until we run out of parents
 			while (potentialNamespaceParent != null &&
@@ -59,12 +60,11 @@ namespace commonItems.SourceGenerators {
 			{
 				// We have a namespace. Use that as the type
 				nameSpace = namespaceParent.Name.ToString();
-        
+
 				// Keep moving "out" of the namespace declarations until we 
 				// run out of nested namespace declarations
-				while (true)
-				{
-					NamespaceDeclarationSyntax parent = namespaceParent.Parent as NamespaceDeclarationSyntax;
+				while (true) {
+					var parent = namespaceParent.Parent as NamespaceDeclarationSyntax;
 					if (parent == null) {
 						break;
 					}
@@ -80,24 +80,24 @@ namespace commonItems.SourceGenerators {
 		}
 
 		internal class ParentClass {
-			public ParentClass(string keyword, string name, string constraints, ParentClass child) {
+			public ParentClass(string keyword, string name, string constraints, ParentClass? child) {
 				Keyword = keyword;
 				Name = name;
 				Constraints = constraints;
 				Child = child;
 			}
 
-			public ParentClass Child { get; }
+			public ParentClass? Child { get; }
 			public string Keyword { get; }
 			public string Name { get; }
 			public string Constraints { get; }
 		}
 
 		// Credits: https://andrewlock.net/creating-a-source-generator-part-5-finding-a-type-declarations-namespace-and-type-hierarchy/
-		static ParentClass GetParentClasses(BaseTypeDeclarationSyntax typeSyntax) {
+		static ParentClass? GetParentClasses(BaseTypeDeclarationSyntax typeSyntax) {
 			// Try and get the parent syntax. If it isn't a type like class/struct, this will be null
-			var parentSyntax = typeSyntax.Parent as TypeDeclarationSyntax;
-			ParentClass parentClassInfo = null;
+			var parentSyntax = typeSyntax?.Parent as TypeDeclarationSyntax;
+			ParentClass? parentClassInfo = null;
 
 			// We can only be nested in class/struct/record
 			static bool IsAllowedKind(SyntaxKind kind) =>
@@ -126,7 +126,7 @@ namespace commonItems.SourceGenerators {
 		/// Get all types in the inheritance hierarchy.
 		/// </summary>
 		private static IEnumerable<ITypeSymbol> GetTypes(ITypeSymbol symbol) {
-			ITypeSymbol current = symbol;
+			ITypeSymbol? current = symbol;
 			while (current != null) {
 				yield return current;
 				current = current.BaseType;
