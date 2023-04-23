@@ -190,7 +190,7 @@ namespace commonItems.SourceGenerators {
 				var codeBuilder = new StringBuilder();
 				codeBuilder.AppendLine("using System.Text;");
 				codeBuilder.AppendLine("using commonItems.Serialization;");
-				codeBuilder.AppendLine($"namespace {classNamespace};");
+                codeBuilder.Append("namespace ").Append(classNamespace).AppendLine(";");
 
 				var parentClass = GetParentClasses(syntax);
 				int parentsCount = 0;
@@ -208,7 +208,7 @@ namespace commonItems.SourceGenerators {
 					parentClass = parentClass.Child; // repeat with the next child
 				}
 
-				codeBuilder.AppendLine($"{classModifier} class {className} {{");
+                codeBuilder.Append(classModifier).Append(" class ").Append(className).AppendLine(" {");
 
 				codeBuilder.AppendLine(@"
 					public string SerializeProperties(string indent) {
@@ -276,13 +276,12 @@ namespace commonItems.SourceGenerators {
 			throw new SerializationException($"Cannot get class symbol for class: {className} in namespace {classNamespace}");
 		}
 
+		// Credits: https://techband.io/c-sharp-source-generators/
 		private static string FormatCode(string generatedCode) {
 			var tree = CSharpSyntaxTree.ParseText(generatedCode);
 			var root = (CSharpSyntaxNode)tree.GetRoot();
-			generatedCode = root.NormalizeWhitespace().ToFullString();
-
-			return generatedCode;
-		}
+            return root.NormalizeWhitespace().ToFullString();
+        }
 
 		public void Initialize(GeneratorInitializationContext context) {
 			context.RegisterForSyntaxNotifications(() => new SerializationByPropertiesReceiver());
