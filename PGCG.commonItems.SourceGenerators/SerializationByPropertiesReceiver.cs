@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Linq;
 
+#nullable enable
 namespace commonItems.SourceGenerators {
 	internal class SerializationByPropertiesReceiver : ISyntaxReceiver {
 		private const string AttributeName = "SerializationByProperties";

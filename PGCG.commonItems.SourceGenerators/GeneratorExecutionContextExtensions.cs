@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
+#nullable enable
 namespace commonItems.SourceGenerators {
 	public static class GeneratorExecutionContextExtensions {
 		private static readonly DiagnosticDescriptor MissingPartialModifier = new DiagnosticDescriptor(
