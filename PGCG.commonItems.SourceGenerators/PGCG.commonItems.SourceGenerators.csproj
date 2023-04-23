@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+	  
+	<!-- For better debugging -->
+	<IsRoslynComponent>true</IsRoslynComponent>
+	<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+	<BuildOutputTargetFolder>analyzers</BuildOutputTargetFolder>
+	<LangVersion>8</LangVersion>
+
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <PackageId>$(AssemblyName)</PackageId>
+    <Version>1.0.0</Version>
+    <Authors>PGCG</Authors>
+    <PackageProjectUrl>https://github.com/ParadoxGameConverters/PGCG.commonItems.SourceGenerators</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ParadoxGameConverters/PGCG.commonItems.SourceGenerators</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4" PrivateAssets="all" />
+	  <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.5.0" PrivateAssets="all" />
+  </ItemGroup>
+
+</Project>
