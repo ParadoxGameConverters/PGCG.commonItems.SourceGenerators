@@ -29,7 +29,7 @@ namespace commonItems.SourceGenerators {
 					var code = GenerateMethodImplementationForClass(candidate, context.Compilation);
 
 					var className = candidate.Identifier.Text;
-					context.AddSource($"{className}SourceGenerated.cs", SourceText.From(code, Encoding.UTF8));
+					context.AddSource($"{className}.g.cs", SourceText.From(code, Encoding.UTF8));
 				}
 			}
 		}
