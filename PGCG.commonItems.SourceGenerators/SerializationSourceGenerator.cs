@@ -22,7 +22,7 @@ namespace commonItems.SourceGenerators {
 					public class SerializationByPropertiesAttribute : Attribute { }
 				}
 			";
-			context.AddSource("SerializationByPropertiesAttribute.cs", SourceText.From(attribute, Encoding.UTF8));
+			context.AddSource("SerializationByPropertiesAttribute.g.cs", SourceText.From(attribute, Encoding.UTF8));
 
 			if (context.SyntaxReceiver is SerializationByPropertiesReceiver actorSyntaxReceiver) {
 				foreach (ClassDeclarationSyntax candidate in actorSyntaxReceiver.Candidates) {
