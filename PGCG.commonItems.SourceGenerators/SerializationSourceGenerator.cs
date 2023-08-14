@@ -230,7 +230,7 @@ namespace commonItems.SourceGenerators {
 						");
 					} else {
 						codeBuilder.AppendLine($@"
-							{lineVariableName} = $""{propertyModel.SerializedName}={{PDXSerializer.Serialize({propertyModel.Name}, indent)}}"";
+							{lineVariableName} = $""{propertyModel.SerializedName} = {{PDXSerializer.Serialize({propertyModel.Name}, indent)}}"";
 						");
 					}
 					if (propertyModel.CanBeNull) {
