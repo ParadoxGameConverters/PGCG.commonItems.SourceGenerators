@@ -11,7 +11,7 @@
 
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <PackageId>$(AssemblyName)</PackageId>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
     <Authors>PGCG</Authors>
     <PackageProjectUrl>https://github.com/ParadoxGameConverters/PGCG.commonItems.SourceGenerators</PackageProjectUrl>
     <RepositoryUrl>https://github.com/ParadoxGameConverters/PGCG.commonItems.SourceGenerators</RepositoryUrl>
