@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
@@ -10,27 +11,48 @@ using System.Text;
 #nullable enable
 namespace commonItems.SourceGenerators {
 	[Generator]
-	public class SerializationSourceGenerator : ISourceGenerator {
-		public void Execute(GeneratorExecutionContext context) {
-			// Code generation goes here.
+	public class SerializationSourceGenerator : IIncrementalGenerator {
+		public void Initialize(IncrementalGeneratorInitializationContext context) {
+			// Register the attribute source
+			context.RegisterPostInitializationOutput(ctx => ctx.AddSource(
+				"SerializationByPropertiesAttribute.g.cs",
+				SourceText.From(@"
+					using System;
+					namespace commonItems.SourceGenerators {
+						[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
+						public class SerializationByPropertiesAttribute : Attribute { }
+					}
+				", Encoding.UTF8)));
 
-			// Generate SerializationByPropertiesAttribute.
-			const string attribute = @"
-				using System;
-				namespace commonItems.SourceGenerators {
-					[AttributeUsage(AttributeTargets.Class, AllowMultiple = false, Inherited = true)]
-					public class SerializationByPropertiesAttribute : Attribute { }
-				}
-			";
-			context.AddSource("SerializationByPropertiesAttribute.g.cs", SourceText.From(attribute, Encoding.UTF8));
+			// Register the syntax receiver
+			IncrementalValuesProvider<ClassDeclarationSyntax> classDeclarations = context.SyntaxProvider
+				.CreateSyntaxProvider(
+					(syntaxNode, _) => IsClassWithSerializationAttribute(syntaxNode),
+					(syntaxContext, _) => (ClassDeclarationSyntax)syntaxContext.Node)
+				.Where(classDeclaration => classDeclaration != null)!;
 
-			if (context.SyntaxReceiver is SerializationByPropertiesReceiver actorSyntaxReceiver) {
-				foreach (ClassDeclarationSyntax candidate in actorSyntaxReceiver.Candidates) {
-					var code = GenerateMethodImplementationForClass(candidate, context.Compilation);
+			// Combine the class declarations with the compilation
+			IncrementalValueProvider<(Compilation, ImmutableArray<ClassDeclarationSyntax>)> compilationAndClasses =
+				context.CompilationProvider.Combine(classDeclarations.Collect());
 
-					var className = candidate.Identifier.Text;
-					context.AddSource($"{className}.g.cs", SourceText.From(code, Encoding.UTF8));
-				}
+			// Generate the source
+			context.RegisterSourceOutput(compilationAndClasses, (sourceProductionContext, source) =>
+				Execute(source.Item1, source.Item2, sourceProductionContext));
+		}
+
+		private static bool IsClassWithSerializationAttribute(SyntaxNode syntaxNode) {
+			return syntaxNode is ClassDeclarationSyntax classDeclaration &&
+				   classDeclaration.AttributeLists
+					   .SelectMany(al => al.Attributes)
+					   .Any(attr => attr.Name.ToString().Contains("SerializationByProperties"));
+		}
+
+		private static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax> classes, SourceProductionContext context) {
+			foreach (var classDeclaration in classes) {
+				var code = GenerateMethodImplementationForClass(classDeclaration, compilation);
+
+				var className = classDeclaration.Identifier.Text;
+				context.AddSource($"{className}.g.cs", SourceText.From(code, Encoding.UTF8));
 			}
 		}
 
@@ -50,14 +72,13 @@ namespace commonItems.SourceGenerators {
 			// Keep moving "out" of nested classes etc until we get to a namespace
 			// or until we run out of parents
 			while (potentialNamespaceParent != null &&
-			       !(potentialNamespaceParent is NamespaceDeclarationSyntax)
-			       && !(potentialNamespaceParent is FileScopedNamespaceDeclarationSyntax)) {
+				   !(potentialNamespaceParent is NamespaceDeclarationSyntax) &&
+				   !(potentialNamespaceParent is FileScopedNamespaceDeclarationSyntax)) {
 				potentialNamespaceParent = potentialNamespaceParent.Parent;
 			}
 
 			// Build up the final namespace by looping until we no longer have a namespace declaration
-			if (potentialNamespaceParent is BaseNamespaceDeclarationSyntax namespaceParent)
-			{
+			if (potentialNamespaceParent is BaseNamespaceDeclarationSyntax namespaceParent) {
 				// We have a namespace. Use that as the type
 				nameSpace = namespaceParent.Name.ToString();
 
@@ -177,7 +198,7 @@ namespace commonItems.SourceGenerators {
 				.ToArray();
 		}
 
-		private string GenerateMethodImplementationForClass(ClassDeclarationSyntax syntax, Compilation compilation) {
+		private static string GenerateMethodImplementationForClass(ClassDeclarationSyntax syntax, Compilation compilation) {
 			var className = syntax.Identifier.Text;
 			var classModifier = syntax.Modifiers.ToFullString().Trim();
 
@@ -190,7 +211,7 @@ namespace commonItems.SourceGenerators {
 				var codeBuilder = new StringBuilder();
 				codeBuilder.AppendLine("using System.Text;");
 				codeBuilder.AppendLine("using commonItems.Serialization;");
-                codeBuilder.Append("namespace ").Append(classNamespace).AppendLine(";");
+				codeBuilder.Append("namespace ").Append(classNamespace).AppendLine(";");
 
 				var parentClass = GetParentClasses(syntax);
 				int parentsCount = 0;
@@ -208,7 +229,7 @@ namespace commonItems.SourceGenerators {
 					parentClass = parentClass.Child; // repeat with the next child
 				}
 
-                codeBuilder.Append(classModifier).Append(" class ").Append(className).AppendLine(" {");
+				codeBuilder.Append(classModifier).Append(" class ").Append(className).AppendLine(" {");
 
 				codeBuilder.AppendLine(@"
 					public string SerializeProperties(string indent) {
@@ -230,7 +251,7 @@ namespace commonItems.SourceGenerators {
 						");
 					} else {
 						codeBuilder.AppendLine($@"
-							{lineVariableName} = $""{propertyModel.SerializedName} = {{PDXSerializer.Serialize({propertyModel.Name}, indent)}}"";
+							{lineVariableName} = $""{propertyModel.SerializedName} = {{PDXSerializer.Serialize({propertyModel.Name}, indent)}}""; 
 						");
 					}
 					if (propertyModel.CanBeNull) {
@@ -251,7 +272,6 @@ namespace commonItems.SourceGenerators {
 				");
 				codeBuilder.AppendLine(@"
 					public string Serialize(string indent, bool withBraces) {
-						// Default implementation: serialize properties.
 						var sb = new StringBuilder();
 						if (withBraces) {
 							sb.AppendLine(""{"");
@@ -280,11 +300,7 @@ namespace commonItems.SourceGenerators {
 		private static string FormatCode(string generatedCode) {
 			var tree = CSharpSyntaxTree.ParseText(generatedCode);
 			var root = (CSharpSyntaxNode)tree.GetRoot();
-            return root.NormalizeWhitespace().ToFullString();
-        }
-
-		public void Initialize(GeneratorInitializationContext context) {
-			context.RegisterForSyntaxNotifications(() => new SerializationByPropertiesReceiver());
+			return root.NormalizeWhitespace().ToFullString();
 		}
 	}
 }
