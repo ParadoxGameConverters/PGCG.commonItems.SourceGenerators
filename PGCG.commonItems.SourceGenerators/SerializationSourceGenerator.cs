@@ -156,8 +156,9 @@ namespace commonItems.SourceGenerators {
 
 		private static string GetPropertyNameForSerialization(IPropertySymbol propertySymbol) {
 			var serializedNameAttr = propertySymbol.GetAttributes().FirstOrDefault(a => a.AttributeClass?.Name == "SerializedName");
-			if (serializedNameAttr != null) {
-				return serializedNameAttr.ConstructorArguments[0].Value.ToString();
+			var serializedNameValue = serializedNameAttr?.ConstructorArguments.FirstOrDefault().Value;
+			if (serializedNameValue != null) {
+				return serializedNameValue.ToString();
 			}
 			return propertySymbol.Name;
 		}
